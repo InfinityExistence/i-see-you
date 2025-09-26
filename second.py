@@ -6,6 +6,7 @@ import cv2
 import numpy
 import torch
 from shapely.geometry import Polygon
+from shapely.geometry.point import Point
 from ultralytics import YOLO
 from ultralytics.engine.results import Results, Boxes
 
@@ -35,11 +36,11 @@ BLUE = (255, 0, 0)
 
 left_screen: Polygon = Polygon(((0, 0), (0, 1045), (1830, 1045), (1830, 0)))
 
-polygon_red_left: Polygon = Polygon(((606, 123), (700, 250), (630, 250), (552, 130)))
-polygon_red_right: Polygon = Polygon(((2740, 200), (2842, 206), (2885, 68), (2864, 68)))
+polygon_red_left: Polygon = Polygon(((626, 123), (770, 250), (630, 250), (552, 130)))
+polygon_red_right: Polygon = Polygon(((2710, 200), (2832, 206), (2925, 68), (2840, 68)))
 
-polygon_green_left: Polygon = Polygon(((638, 114), (739, 180), (779, 159), (682, 95)))
-polygon_green_right: Polygon = Polygon(((2600, 190), (2690, 190), (2775, 68), (2755, 68)))
+polygon_green_left: Polygon = Polygon(((638, 114), (745, 210), (789, 190), (682, 95)))
+polygon_green_right: Polygon = Polygon(((2600, 190), (2700, 190), (2829, 58), (2755, 68)))
 
 polygon_pairs = [
     {"left": polygon_green_left, "right": polygon_green_right, "color": GREEN},
@@ -81,17 +82,17 @@ def process_frame(frame: numpy.ndarray):
 
         x1, y1, x2, y2 = numpy.int32(box.xyxy[0])
         polygon_box = Polygon(((x1, y1), (x2, y1), (x2, y2), (x1, y2)))
-
-        if track_id not in tracked_ids and left_screen.intersects(polygon_box):
+        center = Point((x1 + x2) / 2, (y1+y2) / 2)
+        if track_id not in tracked_ids and left_screen.intersects(center):
             code = generate_id()
             tracked_ids[track_id] = code
 
         for i, pair in enumerate(polygon_pairs):
             (left, right, color) = pair.values()
 
-            if left.intersects(polygon_box):
+            if left.intersects(center):
                 pair_detect[i]["left"] = track_id
-            if track_id not in tracked_ids and right.intersects(polygon_box):
+            if track_id not in tracked_ids and right.intersects(center):
                 pair_detect[i]["right"] = track_id
 
         draw_polygon(frame, polygon_box, BLUE)
